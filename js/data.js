@@ -798,13 +798,14 @@ function Game(seq) {
     function Init() {
 	var assetsPath = "assets/";
         manifest = [
-            {id:"play", src:assetsPath+"Game-Spawn.mp3|" +assetsPath+"Game-Spawn.ogg"},
+            {id:"play", src:assetsPath+"Game-Spawn.ogg"},
 	    //            {id:"break", src:assetsPath+"Game-Break.mp3|" +assetsPath+"Game-Break.ogg", data:6},
 	    //            {id:"death", src:assetsPath+"Game-Death.mp3|" +assetsPath+"Game-Death.ogg"},
-            {id:"rockety", src:assetsPath+"Game-Shoot.mp3|" +assetsPath+"Game-Shoot.ogg", data:6},
+            {id:"rockety", src:assetsPath+"Game-Shoot.ogg", data:6},
 	    //            {id:"music", src:assetsPath+"18-machinae_supremacy-lord_krutors_dominion.mp3|" +assetsPath+"18-machinae_supremacy-lord_krutors_dominion.ogg"}
         ];
 
+        createjs.Sound.alternateExtensions = ["mp3"];
 	preload = new createjs.LoadQueue();
 	preload.installPlugin(createjs.Sound);
 	preload.addEventListener("complete", doneLoading);
