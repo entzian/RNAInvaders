@@ -7,7 +7,7 @@
     <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css" />
     <script src="http://code.jquery.com/jquery-latest.js"></script>
     <script src="js/bootstrap.min.js"></script>
-    <script src="js/easeljs-0.6.1.min.js"></script>
+    <script src="js/easeljs-0.8.2.min.js"></script>
     <script src="js/preloadjs-0.6.2.min.js"></script>
     <script src="js/soundjs-NEXT.min.js"></script>
     <script src="js/flashaudioplugin-NEXT.min.js"></script>
@@ -15,6 +15,10 @@
     <script src="js/soundjs-0.6.2.min.js"></script>
     <script src="js/rna.js" type="text/javascript"></script>
     <script src="js/data.js" type="text/javascript"></script>
+    <script src="js/rna.js" type="text/javascript"></script>
+    <script src="js/ViennaRNA.js" type="text/javascript"></script>
+    <script type='text/javascript' src='js/d3.js'></script>
+    <script type='text/javascript' src='js/fornac.js'></script>
     <script type="text/javascript">
 
 
@@ -140,31 +144,9 @@ function toggleFullScreen(id) {
       </div>
       <span id="printHere"></span>
 
+      <!-- hidden area for the fornac container (which is used to draw the structure) -->
+      <div id='rna_ss' style="display: none;"> </div>
+
       </div> <!-- main>
   </body>
 
-<!--
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html>
-<head>
-  <title>Ronny Lorenz - home</title>
-  <script src="http://code.jquery.com/jquery-latest.js"></script>
-  <script src="js/rna.js" type="text/javascript"></script>
-  <script src="js/ViennaRNA.js" type="text/javascript"></script>
-
-</head>
-<body>
-<div id="maincontainer">
-
-  <div class="content">
-  <form name="foldingtest" method="post" onsubmit="return fold();" action="">
-    <label>Sequence</label>
-    <input id="sequence" name="sequence" type="text" /></br>
-    <input name="button" type="submit" class="Button" value="Fold!" />
-  </form>
-  </div>
-</div>
-</body>
-</html>
-
--->

@@ -39,6 +39,17 @@ var ss = new createjs.SpriteSheet({
     }
 });
 
+//preloded image sources for faster access.
+var adeninePreload;
+var	cytosinePreload;
+var	guaninePreload;
+var	uracilPreload;
+
+var	a={src:"./graphics/a.svg", id:"adenine", type: createjs.LoadQueue.IMAGE};
+var	c={src:"./graphics/c.svg", id:"cytosine", type: createjs.LoadQueue.IMAGE};
+var	g={src:"./graphics/g.svg", id:"guanine", type: createjs.LoadQueue.IMAGE};
+var	u={src:"./graphics/u.svg", id:"uracil", type: createjs.LoadQueue.IMAGE};
+
 // dummy:
 function get_fold(sequence, x) {
     var arrx = [];
@@ -115,6 +126,8 @@ function Rocket(g) {
     //public variables:
     this.X = X;
     this.Y = Y;
+    this.Width = Width;
+    this.Height = Height;
     this.Index = Index;
     
     // functions:
@@ -129,10 +142,12 @@ function Rocket(g) {
 	x = xx;
 	y = yy;
 
-	rocketanime = new createjs.BitmapAnimation(rs);
+	rocketanime = new createjs.Sprite(rs);//createjs.BitmapAnimation(rs);
 	rocketshape.addChild(rocketanime); 
-	rocketshape.x = x+45;
-	rocketshape.y = y-30;
+	rocketshape.x = x; //+45;
+	rocketshape.y = y; //-30;
+	//rocketshape.scaleX = width / rs.width;
+	//rocketshape.scaleY = height / rs.height;
 	rocketanime.gotoAndPlay("run");	
 	g.AddToStage(rocketshape);
 	//		var rectangle = new createjs.Graphics().beginFill("#0000ff").drawRect(xx, yy, width, height);
@@ -141,15 +156,23 @@ function Rocket(g) {
     }
     
     function toString() {
-	return index.toString();
+		return index.toString();
     }
     
     function X() {
-	return x;
+		return x;
     }
     
     function Y() {
-	return y;
+		return y;
+    }
+
+    function Width() {
+		return width;
+    }
+
+    function Height() {
+		return height;
     }
     
     function Index() {
@@ -272,7 +295,7 @@ function Cannon(g) {
     function Init() {
 	// this should be modified to draw actual RNA
 	
-	anime = new createjs.BitmapAnimation(ss);
+	anime = new createjs.Sprite(ss);//createjs.BitmapAnimation(ss);
 	ship.addChild(anime); 
 	//spaceship = new createjs.BitmapAnimation(ss);
 	ship.x = 250;
@@ -321,24 +344,21 @@ function Cannon(g) {
 
     function KeyPressed(e) {
 	switch (e.keyCode) {
-	    // 3 cases: left, right, shoot
-	case 37: key_left = true; break;
-	case 38: key_up = true; break;
-	case 39: key_right = true; break;
-	case 40: key_down = true; break;
-	    //			case 32: Shoot(shot);
-
+		case 37: key_left = true; break;
+		case 38: key_up = true; break;
+		case 39: key_right = true; break;
+		case 40: key_down = true; break;
+		case 32: Shoot(shot); break;
 	}
 	return 0;
     }
 
     function KeyReleased(e) {
 	switch (e.keyCode) {
-	    // 2 cases: left, right
-	case 37: key_left = false; break;
-	case 38: key_up = false; break;
-	case 39: key_right = false; break;
-	case 40: key_down = false; break;
+		case 37: key_left = false; break;
+		case 38: key_up = false; break;
+		case 39: key_right = false; break;
+		case 40: key_down = false; break;
 	}
 	return 0;
     }
@@ -348,7 +368,7 @@ function Cannon(g) {
 	if (shots <= rockets){
 	    createjs.Sound.play("rockety", createjs.Sound.INTERRUPT_NONE, 0, 0, 0, 0.2);			
 	    rocket = new Rocket(g);
-	    rocket.Init(ship.x,ship.y);	
+	    rocket.Init(ship.x+width/2-6,ship.y-5);	
 	    g.AddRocket(rocket);	
 	    //			shots++;
 	}
@@ -378,7 +398,7 @@ function RNA(g) {
     var heightnt = 10;
     var radiusnt = 25;
     var speed_x = 5;
-    var speed_y = 5;
+    var speed_y = 10;
     var hitter = 0;
 
     // sequence
@@ -395,69 +415,100 @@ function RNA(g) {
     this.Init = Init;
     this.Tick = Tick;
     this.HitBy = HitBy;
-    this.ChangePos = ChangePos;
-//    this.ChangeSeq = ChangeSeq;
+    this.Refold = Refold;
+    this.GetPosition = function () {
+    	return [x ,y];
+    }
+	//    this.ChangeSeq = ChangeSeq;
     
     function Init(seq, posx, posy) {
-	sequence = seq.toUpperCase();		
-	x = posx[0];
-	y = posy[0];
-	var mx=posx[0], my=posy[0];
-	for (var i=0; i<sequence.length; i++) {
-	    x=min(x, posx[i]);
-	    y=min(y, posy[i]);
-	    mx=max(mx, posx[i]);
-	    my=max(my, posy[i]);
-	    //console.log(posx[i], posy[i]);
-	    var nt = new Nucleotide(g);
-	    nt.Init(seq[i], posx[i], posy[i], radiusnt);
-	    nts.push(nt);
-	}
-	width = mx-x+2*radiusnt;
-	height = my-y+2*radiusnt;
-	x-=radiusnt;
-	y-=radiusnt;
-	// redraw
-	//g.RemoveFromStage(shape);
+		sequence = seq.toUpperCase();	
+		var db_structure = fold(seq); //from rna.js	
+		console.log(db_structure);
+		x = Number.MAX_VALUE;//posx[0];
+		y = Number.MAX_VALUE;//posy[0];
+		var mx= Number.MIN_VALUE; //posx[0];
+		var my= Number.MIN_VALUE; //posy[0];
+
+		//use fornac drawing to get the locations of the nucleotides
+		var container = new FornaContainer("#rna_ss", {'applyForce': false});
+		var options = {'structure': db_structure,
+					   'sequence': sequence
+		};
+		container.addRNA(options.structure, options);
+		//now extract the image from the fornac container and append the events and add it to stage
+		//d3.select(".link.backbone")
+		var n = d3.selectAll(".noselect.gnode").selectAll("[label_type=nucleotide]");
+		var ntPositions=[];
+		n.each(function(d,i) {
+			radiusnt = d.radius; //TODO set radius once outside => scale in fornac.
+			ntPositions[d.num-1] = [d.x, d.y];
+			x=min(x, d.x);
+			y=min(y, d.y);
+			mx=max(mx, d.x);
+			my=max(my, d.y);
+		});
+
+		width = mx-x+2*radiusnt;
+		height = my-y+2*radiusnt;
+
+        var offset_y = 50;
+		for (var i=0; i<sequence.length; i++) {
+			var nt = new Nucleotide(g);
+			nt.Init(seq[i], i, ntPositions[i][0]-x, offset_y + ntPositions[i][1]-y, radiusnt);
+			nts.push(nt);
+		}
+
+		x=0;
+		y=offset_y;
+
+
+		//x-=radiusnt;
+		//y-=radiusnt;
+		// redraw
+		//g.RemoveFromStage(shape);
     }
 
-    function ChangePos(positionx, positiony) {
-	
-	//console.log(positionx, positiony);
+    function Refold(newSequence) {
+    	//save current sequence position.
+		var positionx = x;
+		var positiony = y;
+		//fold
+		var newStructure = fold(sequence); //rna.js;
+		//remove previous fornac structure.
+		$( "#plotting-area" ).remove();
+		d3.selectAll("#plotting-area").remove();
 
-	// first assure same middle of bounding box:
-	var left = positionx[i];
-	var top = positiony[i];
-	var mx=positionx[0], my=positiony[0];
-	for (var i=0; i<positionx.length; i++) {
-	    left=min(left, positionx[i]);
-	    top=min(top, positiony[i]);
-	    mx=max(mx, positionx[i]);
-	    my=max(my, positiony[i]);
-	}
-	// difference between (middle before) and (after)
-	var dx = (x+width/2) - ((left+mx)/2);
-	var dy = (y+height/2) - ((top+my)/2);
-	for (var i=0; i<positionx.length; i++) {
-	    positionx[i]+=dx;
-	    positiony[i]+=dy;
-	}
+        var container = new FornaContainer("#rna_ss", {'applyForce': false});
+		var options = {'structure': newStructure,
+					   'sequence': newSequence
+		};
+		container.addRNA(options.structure, options);
 
-	//console.log(positionx, positiony, dx, dy);
-	//console.log(x, y, width, height);
+		x = Number.MAX_VALUE;//posx[0];
+		y = Number.MAX_VALUE;//posy[0];
+		var mx= Number.MIN_VALUE; //posx[0];
+		var my= Number.MIN_VALUE; //posy[0];
+		
+		var n = d3.selectAll(".noselect.gnode").selectAll("[label_type=nucleotide]");
+		var ntPositions=[];
+		n.each(function(d,i) {
+			radiusnt = d.radius; //TODO set radius once outside => scale in fornac.
+			ntPositions[d.num-1] = [d.x, d.y];
+			x=min(x, d.x);
+			y=min(y, d.y);
+			mx=max(mx, d.x);
+			my=max(my, d.y);
+		});
+		width = mx-x+2*radiusnt;
+		height = my-y+2*radiusnt;
 
-	// then change bounding box - can be better!!!
-	x = left-radiusnt+dx;
-	y = top-radiusnt+dy;
-	width = mx-left+2*radiusnt;
-	height = my-top+2*radiusnt;
+		for (var i=0; i<newSequence.length; i++) {
+			nts[i].GoTo(positionx + ntPositions[i][0]-x, positiony + ntPositions[i][1]-y);
+		}
 
-	//console.log(x, y, width, height);
-
-	// then redistribute the subcoordinates to nucleotides
-	for (var i=0; i<positionx.length; i++) {
-	    nts[i].GoTo(positionx[i], positiony[i]);
-	}
+		x = positionx;
+		y = positiony;
     }
 
     function Tick() {
@@ -477,6 +528,7 @@ function RNA(g) {
 
 	x = CLIPx(x, 0, width_canvas-width);
 
+
 	//console.log(width_canvas-width);
 	if (y > height_canvas-g.cannon.height) {
 //	    alert("You have been eaten by a hungry RNA!!!");
@@ -490,7 +542,8 @@ function RNA(g) {
 	//console.log(rocket.X(), x, x+width, rocket.Y(), y, y+height);
 	
 	
-	if (inRange(rocket.X(), x, x+width) && inRange(rocket.Y(), y, y+height)) {
+	if ((inRange(rocket.X(), x, x+width) && inRange(rocket.Y(), y, y+height)) ||
+	    (inRange(rocket.X() + rocket.Width(), x, x+width) && inRange(rocket.Y() + rocket.Height(), y, y+height)) ) {
 	    //console.log(rocket.X(), x, x+width, rocket.Y(), y, y+height);
 	    //			hitter++;
 	    var hit = false;
@@ -510,19 +563,14 @@ function RNA(g) {
 		    // here we should call some refolding function
 		    sequence = sequence.slice(0, i) + sequence.slice(i+1, sequence.length);
 		    if(sequence.length){
-		    //console.log("2", sequence);
-			var px = get_fold(sequence, true);
-			var py = get_fold(sequence, false);
+				Refold(sequence);
 
-		    // now set the folded stuff
-			console.log(px, py);
-			ChangePos(px, py);
-		    
-		    //console.log(sequence);
-			return true;
+				//console.log(sequence);
+				return true;
 		    }
 		    else{
-			g.Stop("You won!");
+				g.Stop("You won!");
+				//TODO: restart with another RNA.
 		    }
 		}
 	    }	     
@@ -617,8 +665,8 @@ function Nucleotide(g) {
     var radius = 10;
     var gotox = 0;
     var gotoy = 0;
-    var speed = 1;
-
+    var speed = 1000;
+	var indexInSequence = 0;
     // just debug
     var number = nuclnum;
     nuclnum++;
@@ -628,7 +676,7 @@ function Nucleotide(g) {
 
     // empty shape 
     var shape = new createjs.Container();	
-    
+
     // functions:
     this.Init = Init;
     this.Tick = Tick;
@@ -637,15 +685,36 @@ function Nucleotide(g) {
     this.GoTo = GoTo;
     
     // ###### implementation	
-    function Init(char_init, x, y, rad) {
+    function Init(char_init, i, x, y, rad) {
 	char = char_init.toLowerCase();
+	indexInSequence = i;
 	radius = rad;
 	// draw
 	
-	var image = new createjs.Bitmap("./graphics/"+char+".svg");
+	var image;
+	switch(char) {
+    case 'a':
+        image = new createjs.Bitmap(adeninePreload);
+        break;
+    case 'c':
+        image = new createjs.Bitmap(cytosinePreload);
+        break;
+    case 'g':
+        image = new createjs.Bitmap(guaninePreload);
+        break;
+    case 'u':
+        image = new createjs.Bitmap(uracilPreload);
+        break;
+    default:
+        image = new createjs.Bitmap(adeninePreload);
+        break;
+}
+	
 	shape.addChild(image);
-	shape.x = x-radius;
-	shape.y = y-radius;
+	shape.x = x;
+	shape.y = y;
+	shape.scaleX = 2*rad/image.image.width;
+	shape.scaleY = 2*rad/image.image.height;
 	//console.log(shape.x, shape.y);
 	g.AddToStage(shape);
     }
@@ -655,8 +724,8 @@ function Nucleotide(g) {
     }
     
     function GoTo(x, y) {
-	gotox = (x-radius) - shape.x;
-	gotoy = (y-radius) - shape.y;
+	gotox = x - shape.x; //(x-radius) - shape.x;
+	gotoy = y - shape.y; //(y-radius) - shape.y;
     }
 
     function Tick(speed_x, speed_y) {
@@ -690,9 +759,12 @@ function Nucleotide(g) {
     function HitBy(rocket) {
 	// test if rocket has hit this nucleodtide
 	// test the circle:
-	var dx = shape.x + radius - rocket.X();
-	var dy = shape.y + radius - rocket.Y();
-	if (dx*dx + dy*dy <= radius*radius) {
+	var rx = rocket.X();
+	var ry = rocket.Y();
+	var dx = shape.x /*+ radius - rx*/;
+	var dy = shape.y /*+ radius - ry*/;
+	if ((inRange(rx, dx, dx+2*radius) && inRange(ry, dy, dy+2*radius)) ||  
+	    (inRange(rx+rocket.Width(), dx, dx+2*radius) && inRange(ry+rocket.Height(), dy, dy+2*radius))  /* dx*dx + dy*dy <= radius*radius */) {
 	    return true;
 	}		
 	
@@ -773,7 +845,7 @@ function Game(seq) {
 
     function add_canvas_background(){
     	background1 = new createjs.Container();
-	background1.name="background";
+		background1.name="background";
     	background1.x = 0;
     	background1.y = -600;		    
     	var background_image1 = new createjs.Bitmap("./graphics/background_canvas.png");
@@ -796,45 +868,53 @@ function Game(seq) {
     }
     
     function Init() {
-	var assetsPath = "assets/";
-        manifest = [
-            {id:"play", src:assetsPath+"Game-Spawn.ogg"},
-	    //            {id:"break", src:assetsPath+"Game-Break.mp3|" +assetsPath+"Game-Break.ogg", data:6},
-	    //            {id:"death", src:assetsPath+"Game-Death.mp3|" +assetsPath+"Game-Death.ogg"},
-            {id:"rockety", src:assetsPath+"Game-Shoot.ogg", data:6},
-	    //            {id:"music", src:assetsPath+"18-machinae_supremacy-lord_krutors_dominion.mp3|" +assetsPath+"18-machinae_supremacy-lord_krutors_dominion.ogg"}
-        ];
+		var assetsPath = "assets/";
+			manifest = [
+				{id:"play", src:assetsPath+"Game-Spawn.ogg"},
+			//            {id:"break", src:assetsPath+"Game-Break.mp3|" +assetsPath+"Game-Break.ogg", data:6},
+			//            {id:"death", src:assetsPath+"Game-Death.mp3|" +assetsPath+"Game-Death.ogg"},
+				{id:"rockety", src:assetsPath+"Game-Shoot.ogg", data:6},
+			//            {id:"music", src:assetsPath+"18-machinae_supremacy-lord_krutors_dominion.mp3|" +assetsPath+"18-machinae_supremacy-lord_krutors_dominion.ogg"}
+			];
 
-        createjs.Sound.alternateExtensions = ["mp3"];
-	preload = new createjs.LoadQueue();
-	preload.installPlugin(createjs.Sound);
-	preload.addEventListener("complete", doneLoading);
-	preload.addEventListener("progress", updateLoading);
-	preload.loadManifest(manifest);
+			createjs.Sound.alternateExtensions = ["mp3"];
+		preload = new createjs.LoadQueue(false);
+		preload.installPlugin(createjs.Sound);
+		preload.addEventListener("complete", doneLoading);
+		preload.addEventListener("progress", updateLoading);
+		preload.loadFile(a);
+		preload.loadFile(c);
+		preload.loadFile(g);
+		preload.loadFile(u);
 
-	function updateLoading(event) {
-	    var progress = event ? event.progress+0.5|0 : 0;
-	    messageField.text = "Loading " + progress + "%";
-	    stage.update();
-	}
-	
-	function doneLoading() {
-	    //	    stage.removeChild(messageField);
-	    //	    stage.update();
-	    //
-	    messageField.text = "Prepare for InvadRNA";
-	    //		    stage.addChild(messageField);
-	    stage.update(); //update the stage to show text
-	    //awsomemusic
-	    createjs.Sound.play("play", createjs.Sound.INTERRUPT_NONE, 0, 0, -1, 0.4);			
-	    // start the music
-	    // Init()
-	    // watchRestart();
-	} 
-	// preload.removeEventListener("complete");
+		function updateLoading(event) {
+			var progress = event ? event.progress+0.5|0 : 0;
+			messageField.text = "Loading " + progress + "%";
+			stage.update();
+		}
+		var sourcesLoaded = false;
+		function doneLoading(event) {
+			//	    stage.removeChild(messageField);
+			//	    stage.update();
+			//
+			messageField.text = "Prepare for InvadRNA";
+			//		    stage.addChild(messageField);
+			stage.update(); //update the stage to show text
+			//awsomemusic
+			createjs.Sound.play("play", createjs.Sound.INTERRUPT_NONE, 0, 0, -1, 0.4);			
+			// start the music
+			// Init()
+			// watchRestart();
+			adeninePreload = preload.getResult(a.id);
+			cytosinePreload = preload.getResult(c.id);
+			guaninePreload = preload.getResult(g.id);
+			uracilPreload = preload.getResult(u.id);
 
-	Start();
-	
+			sourcesLoaded = true;
+			Start();
+		} 
+		 preload.load();
+		// preload.removeEventListener("complete");
     }
 
     function Tick() {
@@ -890,18 +970,25 @@ function Game(seq) {
 	var background1=stage.getChildByName("background");
 	var background2=stage.getChildByName("background2");
   	var background3=stage.getChildByName("background3");
-  	if(background1.y > 600){
+  	if(background1 != null && background1.y > 600){
 	    background1.y = -1200;
   	}
-  	if(background2.y > 600){
+  	if(background2 != null && background2.y > 600){
      	    background2.y = -1200;
   	}
-  	if(background3.y > 600){
+  	if(background3 != null && background3.y > 600){
      	    background3.y = -1200;
   	}
-  	background1.y +=2;
-  	background2.y +=9;	
-  	background3.y +=14;	
+  	if(background1 != null){
+		background1.y +=2;
+  	}
+  	if(background2 != null){
+  		background2.y +=9;
+  	}
+  	if(background3 != null){
+  		background3.y +=14;
+  	}
+
 	stage.update();
     }
 
