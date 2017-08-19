@@ -110,7 +110,7 @@ bonusindex=0;
 function Rocket(g) {
     // ###### header
     //variables:
-    var speed_y = -5;
+    var speed_y = -3;
     var width = 13;
     var height = 23;
     var x;
@@ -265,8 +265,8 @@ function Bonus(g) {
 function Cannon(g) {
     // ###### header
     //variables:
-    var speed_x = 5;
-    var speed_y = 3;
+    var speed_x = 1;
+    var speed_y = 1;
     var rockets = 1;
     var shot = rockets.length;
     var key_left = false;
@@ -397,8 +397,8 @@ function RNA(g) {
     var widthnt = 10;
     var heightnt = 10;
     var radiusnt = 25;
-    var speed_x = 5;
-    var speed_y = 10;
+    var speed_x = 0.5;
+    var speed_y = 1;
     var hitter = 0;
 
     // sequence
@@ -755,7 +755,7 @@ function Nucleotide(g) {
 	shape.x += speed_x + tmpx;
 	shape.y += speed_y + tmpy;
     }
-    
+
     function HitBy(rocket) {
 	// test if rocket has hit this nucleodtide
 	// test the circle:
@@ -763,8 +763,9 @@ function Nucleotide(g) {
 	var ry = rocket.Y();
 	var dx = shape.x /*+ radius - rx*/;
 	var dy = shape.y /*+ radius - ry*/;
+        // is the upper left or upper right corner of the rocket within the nucleotide square?
 	if ((inRange(rx, dx, dx+2*radius) && inRange(ry, dy, dy+2*radius)) ||  
-	    (inRange(rx+rocket.Width(), dx, dx+2*radius) && inRange(ry+rocket.Height(), dy, dy+2*radius))  /* dx*dx + dy*dy <= radius*radius */) {
+	    (inRange(rx+rocket.Width(), dx, dx+2*radius) && inRange(ry+rocket.Height(), dy, dy+2*radius))) {
 	    return true;
 	}		
 	
@@ -837,7 +838,7 @@ function Game(seq) {
 	    paused = true;
 	} else {
 	    //ticker unpaused
-	    createjs.Ticker.setInterval(100);
+	    createjs.Ticker.setInterval(10);
 	    createjs.Ticker.addEventListener("tick", Tick);
 	    paused = false;
 	}
@@ -1109,7 +1110,7 @@ function Game(seq) {
 	stage.update();
 
 	//ticker
-	createjs.Ticker.setInterval(100);
+	createjs.Ticker.setInterval(10);
 	createjs.Ticker.addEventListener("tick", Tick);
 	
 	// listeners to key press/release
